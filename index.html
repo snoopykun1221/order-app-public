@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>注文ページ</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+    }
+
+    .box {
+      max-width: 500px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    button {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      margin: 5px 0;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+
+    .muted {
+      color: #777;
+      font-size: 13px;
+    }
+
+    hr {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>注文ページ</h1>
+
+    <p class="muted">
+      ※このQRコードは固定です【毎日更新しません】
+    </p>
+
+    <p id="table"></p>
+
+    <hr>
+
+    <!-- メニュー -->
+    <h3>メニュー</h3>
+    <div id="menu"></div>
+
+    <hr>
+
+    <!-- カート -->
+    <h3>注文内容</h3>
+    <ul id="cart-items"></ul>
+    <p>合計：<span id="total">0</span> 円</p>
+
+    <button id="order">注文する</button>
+  </div>
+
+  <script>
+    // =========================
+    // テーブル番号取得
+    // =========================
+    const params = new URLSearchParams(location.search);
+    const table = params.get("table") || "未指定";
+
+    document.getElementById("table").textContent =
+      "テーブル番号：" + table;
+
+    // =========================
+    // 商品データ（仮）
+    // =========================
+    const products = [
+      { id: 1, name: "唐揚げ", price: 600 },
+      { id: 2, name: "ポテト", price: 450 },
+      { id: 3, name: "生ビール", price: 700 }
+    ];
+
+    // カート
+    const cart = {};
+
+    const menuEl = document.getElementById("menu");
+    const cartEl = document.getElementById("cart-items");
+    const totalEl = document.getElementById("total");
+
+    // =========================
+    // メニュー表示
+    // =========================
+    products.forEach(p => {
+      const btn = document.createElement("button");
+      btn.textContent = `${p.name}（${p.price}円）`;
+
+      btn.onclick = () => {
+        cart[p.id] = (cart[p.id] || 0) + 1;
+        renderCart();
+      };
+
+      menuEl.appendChild(btn);
+    });
+
+    // =========================
+    // カート描画
+    // =========================
+    function renderCart() {
+      cartEl.innerHTML = "";
+      let total = 0;
+
+      products.forEach(p => {
+        if (cart[p.id]) {
+          const li = document.createElement("li");
+          li.textContent = `${p.name} × ${cart[p.id]}`;
+          cartEl.appendChild(li);
+          total += p.price * cart[p.id];
+        }
+      });
+
+      totalEl.textContent = total;
+    }
+
+    // =========================
+    // 注文ボタン
+    // =========================
+    document.getElementById("order").onclick = () => {
+      alert(
+        "注文送信（仮）\n" +
+        "テーブル：" + table
+      );
+    };
+  </script>
+</body>
+</html>
