@@ -1,45 +1,104 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>注文ページ</title>
 
   <style>
     body {
       font-family: sans-serif;
       background: #f5f5f5;
+      margin: 0;
+      padding: 0;
     }
 
     .box {
-      max-width: 500px;
+      max-width: 560px;
       margin: 40px auto;
       background: #fff;
-      padding: 20px;
-      border-radius: 8px;
+      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+    }
+
+    h3 {
+      margin: 14px 0 10px;
+      font-size: 20px;
+    }
+
+    .muted {
+      color: #777;
+      font-size: 13px;
+      margin: 0 0 16px;
+    }
+
+    .kv {
+      font-size: 16px;
+      margin: 10px 0 8px;
+    }
+
+    hr {
+      margin: 18px 0;
+      border: none;
+      border-top: 1px solid #e9e9e9;
     }
 
     button {
       background: #000;
       color: #fff;
       border: none;
-      padding: 10px;
-      margin: 5px 0;
+      padding: 12px 14px;
+      margin: 8px 0;
       cursor: pointer;
       width: 100%;
       font-size: 16px;
+      border-radius: 10px;
     }
 
-    button:hover {
-      opacity: 0.8;
+    button:hover { opacity: 0.86; }
+
+    button.secondary {
+      background: #fff;
+      color: #000;
+      border: 1px solid #d8d8d8;
     }
 
-    .muted {
-      color: #777;
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 8px 0 0;
+    }
+
+    .total {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .notice {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .pill {
+      display: inline-block;
+      background: #f1f1f1;
+      border-radius: 999px;
+      padding: 6px 10px;
       font-size: 13px;
-    }
-
-    hr {
-      margin: 20px 0;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -52,7 +111,8 @@
       ※このQRコードは固定です【毎日更新しません】
     </p>
 
-    <p id="table"></p>
+    <div class="kv" id="table"></div>
+    <div class="pill" id="status">状態：入力中</div>
 
     <hr>
 
@@ -65,20 +125,32 @@
     <!-- カート -->
     <h3>注文内容</h3>
     <ul id="cart-items"></ul>
-    <p>合計：<span id="total">0</span> 円</p>
+    <p class="total">合計：<span id="total">0</span> 円</p>
 
-    <button id="order">注文する</button>
+    <button id="order" disabled>注文する</button>
+    <button id="clear" class="secondary" disabled>カートを空にする</button>
+
+    <div class="notice">
+      注文を押すと、Googleスプレッドシートに記録されます。<br>
+      ※通信が不安定な場合は少し待ってからもう一度お試しください。
+    </div>
   </div>
 
   <script>
+    // =========================
+    // ここをあなたの Apps Script WebアプリURL に置き換える
+    // 例: https://script.google.com/macros/s/XXXX/exec
+    // =========================
+    const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE";
+
     // =========================
     // テーブル番号取得
     // =========================
     const params = new URLSearchParams(location.search);
     const table = params.get("table") || "未指定";
+    document.getElementById("table").textContent = "テーブル番号： " + table;
 
-    document.getElementById("table").textContent =
-      "テーブル番号：" + table;
+    const statusEl = document.getElementById("status");
 
     // =========================
     // 商品データ（仮）
@@ -89,12 +161,14 @@
       { id: 3, name: "生ビール", price: 700 }
     ];
 
-    // カート
+    // カート（productId -> qty）
     const cart = {};
 
     const menuEl = document.getElementById("menu");
     const cartEl = document.getElementById("cart-items");
     const totalEl = document.getElementById("total");
+    const orderBtn = document.getElementById("order");
+    const clearBtn = document.getElementById("clear");
 
     // =========================
     // メニュー表示
@@ -102,12 +176,10 @@
     products.forEach(p => {
       const btn = document.createElement("button");
       btn.textContent = `${p.name}（${p.price}円）`;
-
       btn.onclick = () => {
         cart[p.id] = (cart[p.id] || 0) + 1;
         renderCart();
       };
-
       menuEl.appendChild(btn);
     });
 
@@ -117,27 +189,98 @@
     function renderCart() {
       cartEl.innerHTML = "";
       let total = 0;
+      let hasAny = false;
 
       products.forEach(p => {
         if (cart[p.id]) {
+          hasAny = true;
           const li = document.createElement("li");
-          li.textContent = `${p.name} × ${cart[p.id]}`;
+          li.textContent = `${p.name} × ${cart[p.id]}（${p.price * cart[p.id]}円）`;
           cartEl.appendChild(li);
           total += p.price * cart[p.id];
         }
       });
 
       totalEl.textContent = total;
+
+      orderBtn.disabled = !hasAny;
+      clearBtn.disabled = !hasAny;
+
+      statusEl.textContent = hasAny ? "状態：入力中" : "状態：空";
     }
 
+    // 初期描画
+    renderCart();
+
     // =========================
-    // 注文ボタン
+    // カートを空にする
     // =========================
-    document.getElementById("order").onclick = () => {
-      alert(
-        "注文送信（仮）\n" +
-        "テーブル：" + table
-      );
+    clearBtn.onclick = () => {
+      for (const k of Object.keys(cart)) delete cart[k];
+      renderCart();
+    };
+
+    // =========================
+    // 注文送信（Googleスプレッドシートへ）
+    // =========================
+    orderBtn.onclick = async () => {
+      // URL未設定チェック
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE")) {
+        alert("Apps Script のURLが未設定です。index.html の APPS_SCRIPT_URL を設定してください。");
+        return;
+      }
+
+      // 注文内容作成
+      const items = [];
+      let total = 0;
+
+      products.forEach(p => {
+        const qty = cart[p.id] || 0;
+        if (qty > 0) {
+          items.push(`${p.name}×${qty}`);
+          total += p.price * qty;
+        }
+      });
+
+      if (items.length === 0) return;
+
+      // 送信中UI
+      orderBtn.disabled = true;
+      clearBtn.disabled = true;
+      statusEl.textContent = "状態：送信中…";
+
+      const payload = {
+        table: table,
+        items: items.join(", "),
+        total: total
+      };
+
+      try {
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error("HTTP " + res.status + " " + t);
+        }
+
+        statusEl.textContent = "状態：送信完了";
+        alert("注文を受け付けました");
+
+        // 注文後リセット（URLのtableは保持）
+        for (const k of Object.keys(cart)) delete cart[k];
+        renderCart();
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "状態：送信失敗";
+        alert("送信に失敗しました。通信状況を確認してもう一度お試しください。");
+        // 送信失敗時はボタン復帰
+        renderCart();
+      }
     };
   </script>
 </body>
