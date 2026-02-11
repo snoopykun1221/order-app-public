@@ -7,7 +7,7 @@
 
   <style>
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #f5f5f5;
       margin: 0;
       padding: 0;
@@ -24,11 +24,11 @@
 
     h1 {
       margin: 0 0 10px;
-      font-size: 34px;
+      font-size: 32px;
     }
 
     h3 {
-      margin: 14px 0 10px;
+      margin: 18px 0 10px;
       font-size: 20px;
     }
 
@@ -41,6 +41,15 @@
     .kv {
       font-size: 16px;
       margin: 10px 0 8px;
+    }
+
+    .pill {
+      display: inline-block;
+      background: #f1f1f1;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      margin-top: 6px;
     }
 
     hr {
@@ -60,8 +69,6 @@
       font-size: 16px;
       border-radius: 10px;
     }
-
-    button:hover { opacity: 0.86; }
 
     button.secondary {
       background: #fff;
@@ -91,15 +98,6 @@
       margin-top: 8px;
       line-height: 1.5;
     }
-
-    .pill {
-      display: inline-block;
-      background: #f1f1f1;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 13px;
-      margin-top: 6px;
-    }
   </style>
 </head>
 
@@ -116,13 +114,11 @@
 
     <hr>
 
-    <!-- メニュー -->
     <h3>メニュー</h3>
     <div id="menu"></div>
 
     <hr>
 
-    <!-- カート -->
     <h3>注文内容</h3>
     <ul id="cart-items"></ul>
     <p class="total">合計：<span id="total">0</span> 円</p>
@@ -131,17 +127,16 @@
     <button id="clear" class="secondary" disabled>カートを空にする</button>
 
     <div class="notice">
-      注文を押すと、Googleスプレッドシートに記録されます。<br>
-      ※通信が不安定な場合は少し待ってからもう一度お試しください。
+      注文を押すと、Googleスプレッドシートに記録されます。
     </div>
   </div>
 
   <script>
     // =========================
-    // ここをあなたの Apps Script WebアプリURL に置き換える
-    // 例: https://script.google.com/macros/s/XXXX/exec
+    // Google Apps Script Webアプリ URL（設定済み）
     // =========================
-    const APPS_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE";
+    const APPS_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbxAPBDT-E_u8_W9nNXJBE0F04wNR1Ysfcqr0lTrrezkiFPgXzbOJGeF7G_4APZjjskitw/exec";
 
     // =========================
     // テーブル番号取得
@@ -153,7 +148,7 @@
     const statusEl = document.getElementById("status");
 
     // =========================
-    // 商品データ（仮）
+    // 商品データ
     // =========================
     const products = [
       { id: 1, name: "唐揚げ", price: 600 },
@@ -161,7 +156,6 @@
       { id: 3, name: "生ビール", price: 700 }
     ];
 
-    // カート（productId -> qty）
     const cart = {};
 
     const menuEl = document.getElementById("menu");
@@ -183,9 +177,6 @@
       menuEl.appendChild(btn);
     });
 
-    // =========================
-    // カート描画
-    // =========================
     function renderCart() {
       cartEl.innerHTML = "";
       let total = 0;
@@ -202,35 +193,22 @@
       });
 
       totalEl.textContent = total;
-
       orderBtn.disabled = !hasAny;
       clearBtn.disabled = !hasAny;
-
       statusEl.textContent = hasAny ? "状態：入力中" : "状態：空";
     }
 
-    // 初期描画
     renderCart();
 
-    // =========================
-    // カートを空にする
-    // =========================
     clearBtn.onclick = () => {
       for (const k of Object.keys(cart)) delete cart[k];
       renderCart();
     };
 
     // =========================
-    // 注文送信（Googleスプレッドシートへ）
+    // 注文送信
     // =========================
     orderBtn.onclick = async () => {
-      // URL未設定チェック
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE")) {
-        alert("Apps Script のURLが未設定です。index.html の APPS_SCRIPT_URL を設定してください。");
-        return;
-      }
-
-      // 注文内容作成
       const items = [];
       let total = 0;
 
@@ -244,41 +222,30 @@
 
       if (items.length === 0) return;
 
-      // 送信中UI
       orderBtn.disabled = true;
       clearBtn.disabled = true;
       statusEl.textContent = "状態：送信中…";
 
-      const payload = {
-        table: table,
-        items: items.join(", "),
-        total: total
-      };
-
       try {
-        const res = await fetch(APPS_SCRIPT_URL, {
+        await fetch(APPS_SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            table: table,
+            items: items.join(", "),
+            total: total
+          })
         });
 
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error("HTTP " + res.status + " " + t);
-        }
-
-        statusEl.textContent = "状態：送信完了";
         alert("注文を受け付けました");
+        statusEl.textContent = "状態：送信完了";
 
-        // 注文後リセット（URLのtableは保持）
         for (const k of Object.keys(cart)) delete cart[k];
         renderCart();
 
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        alert("送信に失敗しました。通信状況を確認してください。");
         statusEl.textContent = "状態：送信失敗";
-        alert("送信に失敗しました。通信状況を確認してもう一度お試しください。");
-        // 送信失敗時はボタン復帰
         renderCart();
       }
     };
