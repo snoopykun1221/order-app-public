@@ -2,290 +2,161 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>注文ページ</title>
   <style>
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background:#f5f5f5;
-      margin:0;
-      padding:0;
-    }
-    .box{
-      max-width:720px;
-      margin:24px auto;
-      background:#fff;
-      border-radius:16px;
-      padding:22px;
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-    }
-    h1{ margin:0 0 10px; font-size:32px; }
-    .muted{ color:#666; font-size:14px; margin:0 0 12px; }
-    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:10px 0 16px; }
-    .pill{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      background:#f1f1f1;
-      font-size:14px;
-    }
-    hr{ border:none; border-top:1px solid #eee; margin:18px 0; }
-
-    .menu{
-      display:grid;
-      gap:12px;
-      margin-top:10px;
-    }
-    .item-btn{
-      width:100%;
-      border:none;
-      border-radius:14px;
-      padding:16px 14px;
-      background:#000;
-      color:#fff;
-      font-size:18px;
-      cursor:pointer;
-      transition:transform .02s ease;
-    }
-    .item-btn:active{ transform:scale(.99); }
-
-    .section-title{
-      font-size:20px;
-      font-weight:700;
-      margin:0 0 8px;
-    }
-
-    ul{ margin:8px 0 0 18px; }
-    .total{
-      font-size:22px;
-      font-weight:800;
-      margin:10px 0 14px;
-    }
-
-    .primary{
-      width:100%;
-      border:none;
-      border-radius:14px;
-      padding:16px 14px;
-      background:#111;
-      color:#fff;
-      font-size:18px;
-      cursor:pointer;
-      margin-top:12px;
-    }
-    .secondary{
-      width:100%;
-      border:1px solid #ddd;
-      border-radius:14px;
-      padding:14px 12px;
-      background:#fff;
-      color:#111;
-      font-size:16px;
-      cursor:pointer;
-      margin-top:10px;
-    }
-
-    .small{
-      font-size:13px;
-      color:#666;
-      margin-top:10px;
-      word-break:break-all;
-    }
-    .warn{
-      margin-top:10px;
-      padding:10px 12px;
-      background:#fff3cd;
-      border:1px solid #ffeeba;
-      border-radius:10px;
-      color:#664d03;
-      font-size:14px;
-      display:none;
-    }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f5;margin:0}
+    .wrap{max-width:760px;margin:28px auto;background:#fff;border-radius:14px;padding:22px}
+    h1{margin:0 0 8px;font-size:30px}
+    .note{color:#666;font-size:13px;margin-bottom:14px}
+    .row{display:flex;gap:10px;align-items:center;margin:10px 0}
+    .pill{display:inline-block;background:#eee;padding:6px 10px;border-radius:999px;font-size:13px}
+    .btn{width:100%;padding:16px 14px;border:0;border-radius:12px;background:#000;color:#fff;font-size:18px;cursor:pointer}
+    .btn2{width:100%;padding:14px;border-radius:12px;border:1px solid #ccc;background:#fafafa;font-size:16px;cursor:pointer}
+    .menu button{width:100%;padding:16px;border-radius:12px;border:0;background:#000;color:#fff;font-size:18px;margin:10px 0;cursor:pointer}
+    .menu button:active{transform:scale(.99)}
+    ul{margin:10px 0 0;padding-left:18px}
+    .sum{font-weight:700;font-size:20px;margin:8px 0 14px}
+    .status{margin-left:10px}
+    .small{font-size:12px;color:#666;margin-top:10px;word-break:break-all}
   </style>
 </head>
-
 <body>
-  <div class="box">
+  <div class="wrap">
     <h1>注文ページ</h1>
-    <p class="muted">※このQRコードは固定です【毎日更新しません】</p>
+    <div class="note">※このQRコードは固定です【毎日更新しません】</div>
 
     <div class="row">
-      <span class="pill" id="table">テーブル番号：未指定</span>
-      <span class="pill" id="status">状態：入力中</span>
+      <div class="pill">テーブル番号：<span id="table">-</span></div>
+      <div class="pill status">状態：<span id="status">入力中</span></div>
     </div>
 
-    <hr>
+    <hr />
 
-    <p class="section-title">メニュー</p>
+    <h2>メニュー</h2>
     <div class="menu" id="menu"></div>
 
-    <hr>
+    <hr />
 
-    <p class="section-title">注文内容</p>
+    <h2>注文内容</h2>
     <ul id="cart"></ul>
-    <div class="total" id="total">合計：0 円</div>
+    <div class="sum">合計：<span id="total">0</span> 円</div>
 
-    <button class="primary" id="submit">注文する</button>
-    <button class="secondary" id="clear">カートを空にする</button>
+    <button class="btn" id="sendBtn">注文する</button>
+    <div style="height:10px"></div>
+    <button class="btn2" id="clearBtn">カートを空にする</button>
 
-    <div class="warn" id="warn"></div>
-
-    <p class="small" id="debug"></p>
+    <div class="small" id="debug"></div>
   </div>
 
-  <script>
-    // ============================
-    // ここがGAS WebアプリURL（設定済み）
-    // ============================
-    const APPS_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbxuXfWIuKj2ZOGA_EvEGNzS6-nepQa72oRHKdEV5viiFxixkMu8_ZLhOtg7deGxdp0_xQ/exec";
+<script>
+  // ★あなたのGAS WebアプリURL（これが命）
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxuXfWIuKj2ZOGA_EvEGNzS6-nepQa72oRHKdEV5viiFxixkMu8_ZLhOtg7deGxdp0_xQ/exec";
 
-    // ============================
-    // テーブル番号取得（?table=12）
-    // ============================
-    const params = new URLSearchParams(location.search);
-    const table = params.get("table") || "未指定";
-    document.getElementById("table").textContent = "テーブル番号： " + table;
+  const params = new URLSearchParams(location.search);
+  const table = params.get("table") || "未指定";
+  document.getElementById("table").textContent = table;
 
-    // ============================
-    // 商品データ（ここを増やせばメニュー増える）
-    // ============================
-    const products = [
-      { id: 1, name: "唐揚げ", price: 600 },
-      { id: 2, name: "ポテト", price: 450 },
-      { id: 3, name: "生ビール", price: 700 },
-    ];
+  const products = [
+    { id: 1, name: "唐揚げ", price: 600 },
+    { id: 2, name: "ポテト", price: 450 },
+    { id: 3, name: "生ビール", price: 700 },
+  ];
 
-    // カート（id -> qty）
-    const cart = new Map();
+  // cart: Map(productId -> {id,name,price,qty})
+  const cart = new Map();
 
-    function yen(n){
-      return new Intl.NumberFormat("ja-JP").format(n);
-    }
-
-    function showWarn(msg){
-      const el = document.getElementById("warn");
-      el.style.display = "block";
-      el.textContent = msg;
-    }
-    function hideWarn(){
-      const el = document.getElementById("warn");
-      el.style.display = "none";
-      el.textContent = "";
-    }
-
-    // ============================
-    // メニュー描画
-    // ============================
-    const menuEl = document.getElementById("menu");
+  function renderMenu() {
+    const box = document.getElementById("menu");
+    box.innerHTML = "";
     products.forEach(p => {
-      const btn = document.createElement("button");
-      btn.className = "item-btn";
-      btn.textContent = `${p.name}（${yen(p.price)}円）`;
-      btn.onclick = () => {
-        hideWarn();
-        cart.set(p.id, (cart.get(p.id) || 0) + 1);
+      const b = document.createElement("button");
+      b.textContent = `${p.name}（${p.price}円）`;
+      b.onclick = () => {
+        const cur = cart.get(p.id) || { ...p, qty: 0 };
+        cur.qty += 1;
+        cart.set(p.id, cur);
         renderCart();
       };
-      menuEl.appendChild(btn);
+      box.appendChild(b);
+    });
+  }
+
+  function renderCart() {
+    const ul = document.getElementById("cart");
+    ul.innerHTML = "";
+    let total = 0;
+
+    [...cart.values()].forEach(it => {
+      const li = document.createElement("li");
+      const line = it.price * it.qty;
+      total += line;
+      li.textContent = `${it.name} × ${it.qty}（${line}円）`;
+      ul.appendChild(li);
     });
 
-    function renderCart(){
-      const ul = document.getElementById("cart");
-      ul.innerHTML = "";
+    document.getElementById("total").textContent = total;
+  }
 
-      let total = 0;
-      const items = [];
+  function setStatus(s) {
+    document.getElementById("status").textContent = s;
+  }
 
-      for (const [id, qty] of cart.entries()){
-        const p = products.find(x => x.id === id);
-        if (!p) continue;
+  function makeOrderId() {
+    return `${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
+  }
 
-        const sub = p.price * qty;
-        total += sub;
-
-        items.push({ id: p.id, name: p.name, price: p.price, qty, subTotal: sub });
-
-        const li = document.createElement("li");
-        li.textContent = `${p.name} × ${qty}（${yen(sub)}円）`;
-        ul.appendChild(li);
-      }
-
-      document.getElementById("total").textContent = `合計：${yen(total)} 円`;
-
-      // debug（いざって時の原因追跡）
-      document.getElementById("debug").textContent =
-        `GAS: ${APPS_SCRIPT_URL} / table=${table} / items=${items.length}`;
-
-      return { items, total };
+  async function sendOrder() {
+    if (table === "未指定") {
+      alert("テーブル番号が未指定です。URLに ?table=12 のように付けてください。");
+      return;
+    }
+    const items = [...cart.values()].map(it => ({
+      id: it.id, name: it.name, price: it.price, qty: it.qty
+    }));
+    if (items.length === 0) {
+      alert("カートが空です。");
+      return;
     }
 
-    renderCart();
-
-    // ============================
-    // 送信（GASへPOST）
-    // ============================
-    async function submitOrder(){
-      hideWarn();
-
-      const statusEl = document.getElementById("status");
-      const { items, total } = renderCart();
-
-      if (items.length === 0){
-        showWarn("カートが空です。先にメニューを押して商品を追加してね。");
-        return;
-      }
-
-      statusEl.textContent = "状態：送信中…";
-
-      const payload = {
-        table: table,
-        items: items,
-        total: total
-      };
-
-      try {
-        const res = await fetch(APPS_SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload),
-        });
-
-        // 失敗の時に理由を見える化
-        const text = await res.text();
-
-        if (!res.ok){
-          statusEl.textContent = "状態：送信失敗";
-          showWarn(`送信失敗（HTTP ${res.status}）: ${text}`);
-          return;
-        }
-
-        // GASがJSON返す想定だけど、文字列でもOKにしておく
-        let obj = null;
-        try { obj = JSON.parse(text); } catch (_) {}
-
-        if (obj && obj.result === "ok"){
-          statusEl.textContent = "状態：送信完了";
-          alert("注文を送信しました！");
-          cart.clear();
-          renderCart();
-        } else {
-          statusEl.textContent = "状態：送信失敗";
-          showWarn(`GAS応答が想定外: ${text}`);
-        }
-
-      } catch (err){
-        statusEl.textContent = "状態：送信失敗";
-        showWarn(`送信失敗（通信エラー）: ${String(err)}`);
-      }
-    }
-
-    document.getElementById("submit").onclick = submitOrder;
-    document.getElementById("clear").onclick = () => {
-      cart.clear();
-      hideWarn();
-      renderCart();
+    const total = items.reduce((s, it) => s + it.price * it.qty, 0);
+    const payload = {
+      orderId: makeOrderId(),
+      table,
+      items,
+      total
     };
-  </script>
+
+    setStatus("送信中…");
+    document.getElementById("sendBtn").disabled = true;
+
+    try {
+      // GASはCORSが厳しいので、送信は読まない（no-corsでOK）
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      alert("注文を送信しました！");
+      cart.clear();
+      renderCart();
+      setStatus("送信完了");
+      document.getElementById("debug").textContent = `GAS: ${APPS_SCRIPT_URL} / table=${table} / items=${items.length}`;
+    } catch (e) {
+      alert("送信に失敗しました。通信状況を確認してください。");
+      setStatus("送信失敗");
+    } finally {
+      document.getElementById("sendBtn").disabled = false;
+    }
+  }
+
+  document.getElementById("sendBtn").onclick = sendOrder;
+  document.getElementById("clearBtn").onclick = () => { cart.clear(); renderCart(); };
+
+  renderMenu();
+  renderCart();
+</script>
 </body>
 </html>
